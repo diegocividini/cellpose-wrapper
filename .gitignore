@@ -1,0 +1,53 @@
+# --- JULIA STANDARD ---
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+deps/deps.jl
+deps/build.log
+deps/downloads/
+deps/usr/
+deps/src/
+docs/build/
+docs/site/
+
+# NOTA: Rimosso Manifest.toml per garantire la riproducibilità esatta dell'ambiente
+# Manifest.toml <-- COMMENTATO/RIMOSSO
+
+LocalPreferences.toml
+JuliaLocalPreferences.toml
+
+# --- EDITOR & IDE (Consigliato) ---
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# --- PYTHON (FONDAMENTALE) ---
+# Ignora l'ambiente virtuale (pesante e non portabile)
+deps/python/.venv/
+.venv/
+venv/
+ENV/
+
+# Ignora cache e file compilati
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- MAC OS (FONDAMENTALE) ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- CELLPOSE & OUTPUT ---
+# Ignora i modelli pesanti
+*.pth
+deps/models/*.pth
+~/.cellpose/
+
+# Ignora le immagini di test e i risultati
+*.png
+*.jpg
+*.tiff
+# Se vuoi mantenere un'immagine di esempio specifica (es. per il README),
+# usa il comando: git add -f assets/immagine_esempio.jpg
