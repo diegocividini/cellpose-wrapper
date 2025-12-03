@@ -14,7 +14,7 @@ function __init__()
     # 1. FIX MPS
     torch_temp = pyimport("torch")
     if torch_temp.backends.mps.is_available()
-        println("🚀 CellposeWrapper: Mac Apple Silicon (MPS) attivo.")
+        println("🚀 CellposeWrapper: Mac Apple Silicon (MPS) active.")
         torch_temp.set_default_dtype(torch_temp.float32)
     end
 
@@ -31,17 +31,17 @@ function __init__()
         def _load_simple(gpu_on, model_type_str, custom_path):
             weights_path = None
             if custom_path:
-                print(f"   --> Python: Uso custom path: {custom_path}")
+                print(f"   --> Python: Using custom path: {custom_path}")
                 weights_path = custom_path
             else:
-                print(f"   --> Python: Richiesto '{model_type_str}'")
+                print(f"   --> Python: Requested '{model_type_str}'")
                 try:
                     weights_path = models.model_path(model_type_str)
                 except Exception as e:
                     print(f"   ⚠️ Warning path: {e}")
                     weights_path = model_type_str
 
-            print(f"   --> Python: Loading da: {os.path.basename(str(weights_path))}")
+            print(f"   --> Python: Loading from: {os.path.basename(str(weights_path))}")
             return models.CellposeModel(gpu=gpu_on, pretrained_model=weights_path)
         """
 
@@ -49,10 +49,10 @@ function __init__()
         copy!(torch, py"torch")
         copy!(py_model_loader, py"_load_simple")
 
-        println("✅ API Python configurata.")
+        println("✅ Python API configured.")
 
     catch e
-        println("❌ ERRORE CRITICO INIT")
+        println("❌ CRITICAL INIT ERROR")
         rethrow(e)
     end
 end
@@ -73,7 +73,7 @@ end
 """
 function segment_image(image_path::String;
     diameter=nothing,
-    model_type="tissuenet",
+    model_type=nothing,
     pretrained_model=nothing,
     flow_threshold=0.4,
     cellprob_threshold=0.0,
@@ -83,7 +83,7 @@ function segment_image(image_path::String;
 
     img_cv = cv2.imread(image_path)
     if img_cv === nothing
-        error("File non trovato: $image_path")
+        error("Not Found: $image_path")
     end
     img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
 
@@ -91,7 +91,7 @@ function segment_image(image_path::String;
     p_path = isnothing(pretrained_model) ? nothing : pretrained_model
     model = py_model_loader(use_gpu, model_type, p_path)
 
-    println("...Analisi in corso...")
+    println("...Analyzing...")
 
     results = model.eval(
         img_rgb,
@@ -107,19 +107,19 @@ function segment_image(image_path::String;
     masks = results[1]
     flows = results[2]
 
-    # Estrazione dati grezzi
+    # Extraction of raw data
     flows_rgb_py = flows[1]
     cellprob_py = flows[3]
 
     est_diam = length(results) >= 4 ? results[4] : 0.0
     if est_diam > 0
-        println("✅ Fatto! Diametro: $(round(est_diam, digits=2)) px")
+        println("✅ Done! Diameter: $(round(est_diam, digits=2)) px")
     else
-        println("✅ Fatto!")
+        println("✅ Done!")
     end
 
-    # --- FIX DEFINITIVO ---
-    # Usiamo la funzione sicura che controlla il tipo prima di convertire
+    # --- FINAL FIX ---
+    # Use the safe function that checks the type before converting
     return (
         masks=_safe_convert(masks),
         flows_rgb=_safe_convert(flows_rgb_py),
@@ -136,7 +136,7 @@ function show_results(results, image_path; view="masks")
     if view == "masks"
         masks = results.masks
         h, w = size(masks)
-        println("Visualizzazione: $n_cells cellule.")
+        println("Visualization: $n_cells cells.")
 
         overlay = fill(RGBA(0, 0, 0, 0), h, w)
         if n_cells > 0
@@ -156,12 +156,12 @@ function show_results(results, image_path; view="masks")
         display(p)
 
     elseif view == "flows"
-        println("Visualizzazione Flows di $n_cells cellule")
+        println("Visualization Flows of $n_cells cells")
         flow_data = results.flows_rgb
-        # Python (H,W,C) -> Julia (C,W,H) di solito con PyCall standard
-        # Se flow_data è già un array Julia, controlliamo le dimensioni
+        # Python (H,W,C) -> Julia (C,W,H) usually with standard PyCall
+        # If flow_data is already a Julia array, we check the dimensions
 
-        # Logica adattiva per visualizzare l'immagine RGB
+        # Adaptive logic to display the RGB image
         # Se è un array 3D
         if ndims(flow_data) == 3
             # Se i canali sono alla fine (H,W,3), permutiamo
@@ -179,7 +179,7 @@ function show_results(results, image_path; view="masks")
                     flow_img = colorview(RGB, Float64.(flow_data))
                 end
             else
-                println("⚠️ Formato flows non riconosciuto: $(size(flow_data))")
+                println("⚠️ Unrecognized flows format: $(size(flow_data))")
                 return
             end
 
@@ -187,7 +187,7 @@ function show_results(results, image_path; view="masks")
         end
 
     elseif view == "prob"
-        println("Visualizzazione Prob $n_cells cellule")
+        println("Visualization Prob $n_cells cells")
         prob_map = results.cellprob
         display(heatmap(prob_map, c=:inferno, axis=false, yflip=true, aspect_ratio=:equal, title="Probability $n_cells cells"))
 
